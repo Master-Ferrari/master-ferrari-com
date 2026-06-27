@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width , initial-scale=1">
+<title>by master-ferrari</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=PT+Mono&display=swap');
+:root {
+	--pad : 13px ;
+	--bg : #000 ;
+	--text : #fff ;
+	--panel : rgba(0 , 0 , 0 , 0.5) ;
+	--link : #6FD79C ;
+}
+* { margin : 0 ; padding : 0 ; }
+html , body { width : 100% ; height : 100% ; overflow : hidden ; }
+body {
+	background : var(--bg) ;
+	color : var(--text) ;
+	font-family : 'PT Mono' , monospace ;
+	font-size : 16px ;
+	line-height : 1.6 ;
+	text-transform : lowercase ;
+}
+#bg {
+	position : fixed ;
+	top : 0 ; left : 0 ;
+	width : 100% ; height : 100% ;
+	display : block ;
+	touch-action : none ;
+	image-rendering : pixelated ;
+	z-index : 0 ;
+}
+#content {
+	position : relative ;
+	z-index : 1 ;
+	width : fit-content ;
+	min-height : 100% ;
+	padding : var(--pad) ;
+	padding-right: calc(2 * var(--pad)) ;
+	background : var(--panel) ;
+	-webkit-mask-image : linear-gradient(to right , #000 0 , #000 calc(100% - var(--pad)) , transparent 100%) ;
+	mask-image : linear-gradient(to right , #000 0 , #000 calc(100% - var(--pad)) , transparent 100%) ;
+	pointer-events : none ;
+}
+a {
+	color : var(--link) ;
+	font-weight : bold ;
+	text-decoration : none ;
+	pointer-events : auto ;
+}
+a:hover { text-decoration : underline ; }
+</style>
+</head>
+<body>
+<canvas id="bg"></canvas>
+<div id="content">
+<div><a href="https://master-ferrari.com">by master-ferrari</a></div>
+<br>
+<a href="https://genby.master-ferrari.com">genby</a><br>
+<a href="https://rule-the-worlds.master-ferrari.com">rule the worlds</a><br>
+<a href="https://the-factorio-screen.master-ferrari.com">the factorio screen</a><br>
+<a href="https://mods.factorio.com/user/Gofarovich">mods.factorio.com</a><br>
+<a href="https://steamcommunity.com/sharedfiles/filedetails/?id=3018655730">riba mover</a><br>
+<a href="https://steamcommunity.com/sharedfiles/filedetails/?id=2382545579">riba portable items</a><br>
+<br>
+<a href="https://discord.gg/tvV9ts8jxm">discord</a><br>
+<a href="https://t.me/svastic_fantastic">телеграм</a><br>
+<br>
+</div>
+<script>
+const FRAG = `#ifdef GL_FRAGMENT_PRECISION_HIGH
+precision highp float;
+#else
+precision mediump float;
+#endif
+
+uniform vec2 resolution;
+uniform float time;
+uniform sampler2D backbuffer;
+uniform sampler2D noise;
+uniform vec3 cursor;
+uniform int frame;
+
+vec3 sand = vec3(1.);
+vec3 wall = vec3(0.,0.,1.);
+vec3 voiD = vec3(0.);
+
+vec3 get(float x, float y) {
+  return texture2D(backbuffer, (gl_FragCoord.xy + vec2(x, y)) / resolution).rgb;
+}
+
+bool getA(float x, float y) {
+  return voiD != texture2D(backbuffer, (gl_FragCoord.xy + vec2(x, y)) / resolution).rgb;
+}
+
+bool getW(float x, float y) {
+  return wall == texture2D(backbuffer, (gl_FragCoord.xy + vec2(x, y)) / resolution).rgb;
+}
+
+bool getS(float x, float y) {
+  return sand == texture2D(backbuffer, (gl_FragCoord.xy + vec2(x, y)) / resolution).rgb;
+}
+
+void main(void) {
+  vec3 fin = vec3(0.);
+  vec2 uv = gl_FragCoord.xy / resolution.xy;
+  fin = texture2D(backbuffer, gl_FragCoord.xy / resolution).rgb;
+
+  if (frame == 0)
+    fin = texture2D(noise, uv).rgb - vec3(0.5, 0.7, 0.1);
+
+  if (frame - (frame / 5) * 5 == 0)
+    fin = min(fin, texture2D(noise, uv).rgb + vec3(0., -0.6, 0.8));
+
+  if (gl_FragCoord.x < 5.)
+    fin = get(resolution.x + gl_FragCoord.x - 10., 0.);
+
+  if (true) {
+    if (!getS(0., 0.)) {
+      if (getA(-5., -3.) && getA(1., 2.) && getA(2., 0.)) {
+        fin = vec3(get(0., 6.).b - get(0., -2.).r + get(0., 2.).b + get(0., -2.).r - get(-5., 0.) * 0.4);
+        if (fin.g > 0.2) fin = fin + get(0., 1.) - get(0., -2.);
+        if (fin.g > 0.5) fin = fin - get(0., -1.);
+      }
+    } else {
+      if (getA(-1., 0.) && getA(1., 0.) || getA(0., 2.) && getA(0., -1.))
+        fin = vec3(0.);
+    }
+  }
+
+  float del = 0.;
+  fin = fin - 0.2 * (
+    -get(-1. + del, 0.) + get(1. + del, 0.) + get(-2. + del, 0.) + get(2. + del, 0.)
+    + 0.1 * get(sin(float(frame / 10)) * 0.5 + del, 0.)
+  );
+
+  float tap = min(resolution.x, resolution.y) * 0.09;
+  float tap2 = min(resolution.x, resolution.y) * 0.08;
+
+  if (cursor.z > 0.5) {
+    if (distance(cursor.xy, gl_FragCoord.xy) < tap && !getW(0., 0.)) {
+      fin = vec3(0.3, 0., 0.7);
+      if (distance(cursor.xy, gl_FragCoord.xy) < tap2)
+        fin = 0.2 * get(sin(time) * 20., cos(time) * 20.) - 0.7 * get(1., 0.) + get(-1., -1.);
+    }
+  }
+
+  gl_FragColor = vec4(fin, 1.0);
+}`;
+
+const canvas = document.getElementById('bg');
+const gl = canvas.getContext('webgl', { preserveDrawingBuffer: true });
+let frame = 0;
+let startTime = performance.now();
+let cursor = [0, 0, 0];
+let prog = null;
+let uniforms = {};
+
+const vertSrc = `attribute vec2 pos; void main() { gl_Position = vec4(pos, 0.0, 1.0); }`;
+
+const buf = gl.createBuffer();
+gl.bindBuffer(gl.ARRAY_BUFFER, buf);
+gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 1,-1, -1,1, 1,1]), gl.STATIC_DRAW);
+
+function makeNoise(w, h) {
+  const data = new Uint8Array(w * h * 4);
+  for (let i = 0; i < data.length; i++) data[i] = Math.random() * 256 | 0;
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, data);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.REPEAT);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.REPEAT);
+  return tex;
+}
+
+let noiseTex = makeNoise(512, 512);
+let fbos = [null, null];
+let textures = [null, null];
+let currentFBO = 0;
+
+function createFBO(w, h) {
+  const tex = gl.createTexture();
+  gl.bindTexture(gl.TEXTURE_2D, tex);
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, w, h, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+  gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+  const fbo = gl.createFramebuffer();
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbo);
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, tex, 0);
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  return { fbo, tex };
+}
+
+function initFBOs() {
+  for (let i = 0; i < 2; i++) {
+    if (fbos[i]) gl.deleteFramebuffer(fbos[i]);
+    if (textures[i]) gl.deleteTexture(textures[i]);
+    const r = createFBO(canvas.width, canvas.height);
+    fbos[i] = r.fbo;
+    textures[i] = r.tex;
+  }
+  currentFBO = 0;
+}
+
+function compile(src, type) {
+  const s = gl.createShader(type);
+  gl.shaderSource(s, src);
+  gl.compileShader(s);
+  if (!gl.getShaderParameter(s, gl.COMPILE_STATUS)) {
+    console.error(gl.getShaderInfoLog(s));
+    gl.deleteShader(s);
+    return null;
+  }
+  return s;
+}
+
+const vs = compile(vertSrc, gl.VERTEX_SHADER);
+const fs = compile(FRAG, gl.FRAGMENT_SHADER);
+prog = gl.createProgram();
+gl.attachShader(prog, vs);
+gl.attachShader(prog, fs);
+gl.linkProgram(prog);
+gl.deleteShader(fs);
+gl.useProgram(prog);
+
+const posLoc = gl.getAttribLocation(prog, 'pos');
+gl.enableVertexAttribArray(posLoc);
+gl.vertexAttribPointer(posLoc, 2, gl.FLOAT, false, 0, 0);
+
+uniforms = {
+  resolution: gl.getUniformLocation(prog, 'resolution'),
+  time:       gl.getUniformLocation(prog, 'time'),
+  backbuffer: gl.getUniformLocation(prog, 'backbuffer'),
+  noise:      gl.getUniformLocation(prog, 'noise'),
+  cursor:     gl.getUniformLocation(prog, 'cursor'),
+  frame:      gl.getUniformLocation(prog, 'frame'),
+};
+
+function resize() {
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  initFBOs();
+  frame = 0;
+}
+
+function updateCursor(e) {
+  const rect = canvas.getBoundingClientRect();
+  cursor[0] = (e.clientX - rect.left) * (canvas.width / rect.width);
+  cursor[1] = canvas.height - (e.clientY - rect.top) * (canvas.height / rect.height);
+}
+window.addEventListener('pointerdown', e => { updateCursor(e); cursor[2] = 1; });
+window.addEventListener('pointermove', e => { if (cursor[2] > 0.5) updateCursor(e); });
+window.addEventListener('pointerup',   e => { cursor[2] = 0; });
+window.addEventListener('pointercancel', e => { cursor[2] = 0; });
+
+function render() {
+  const time = (performance.now() - startTime) / 1000;
+  const read = currentFBO;
+  const write = 1 - currentFBO;
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, fbos[write]);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, textures[read]);
+  gl.uniform1i(uniforms.backbuffer, 0);
+
+  gl.activeTexture(gl.TEXTURE1);
+  gl.bindTexture(gl.TEXTURE_2D, noiseTex);
+  gl.uniform1i(uniforms.noise, 1);
+
+  gl.uniform2f(uniforms.resolution, canvas.width, canvas.height);
+  gl.uniform1f(uniforms.time, time);
+  gl.uniform3f(uniforms.cursor, cursor[0], cursor[1], cursor[2]);
+  gl.uniform1i(uniforms.frame, frame);
+
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+  gl.viewport(0, 0, canvas.width, canvas.height);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, textures[write]);
+  gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
+
+  currentFBO = write;
+  frame++;
+  requestAnimationFrame(render);
+}
+
+window.addEventListener('resize', resize);
+resize();
+render();
+</script>
+</body>
+</html>
