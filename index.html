@@ -51,8 +51,26 @@ a {
 	pointer-events : auto ;
 }
 a:hover { text-decoration : underline ; }
+
+@media (max-aspect-ratio : 1 / 1) {
+	#content {
+		position : fixed ;
+		left : 0 ;
+		bottom : 0 ;
+		width : 100% ;
+		min-height : 0 ;
+		height : fit-content ;
+		padding : var(--pad) ;
+		padding-top : calc(2 * var(--pad)) ;
+		-webkit-mask-image : linear-gradient(to top , #000 0 , #000 calc(100% - var(--pad)) , transparent 100%) ;
+		mask-image : linear-gradient(to top , #000 0 , #000 calc(100% - var(--pad)) , transparent 100%) ;
+	}
+}
+
 </style>
+
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-92NK5JCY8B"></script>
+
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
